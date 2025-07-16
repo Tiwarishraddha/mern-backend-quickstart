@@ -13,6 +13,12 @@ export const askQuestions = () => {
             name: 'env',
             message: 'Do you want .env file example?',
             default: true
+        },
+        {
+            type: 'confirm',
+            name: 'sampleFiles',
+            message: 'Do you want sample files (sampleController.js, sampleModel.js, sampleRoute.js)?',
+            default: true
         }
     ]);
 };
