@@ -26,7 +26,7 @@ export const createProject = async (answers) => {
             filter: (src) => {
                 const rel = path.relative(source, src);
                 if (rel.startsWith('node_modules')) return false;
-                if (rel === '.env') return false;
+                if (rel === '.env' || rel === '.env.example') return false;
                 return true;
             }
         });
@@ -39,14 +39,42 @@ export const createProject = async (answers) => {
             await fs.remove(path.join(destination, 'utils', 'generateToken.js'));
         }
 
-        // ✅ Remove sample files if user says no
+        // Remove sample files if user says no
         if (!answers.sampleFiles) {
             await fs.remove(path.join(destination, 'models', 'sampleModel.js'));
             await fs.remove(path.join(destination, 'controllers', 'sampleController.js'));
             await fs.remove(path.join(destination, 'routes', 'sampleRoute.js'));
         }
 
-        // Always create an empty .env file
+        // Handle authMiddleware.js content based on answers
+        if (answers.auth) {
+            const authFilePath = path.join(destination, 'middleware', 'authMiddleware.js');
+
+            if (!answers.sampleFiles) {
+                // If no sample files, overwrite authMiddleware.js with simple one
+                const cleanAuthMiddleware = `
+import jwt from 'jsonwebtoken';
+
+export const protect = async (req, res, next) => {
+    try {
+        const token = req.headers.authorization?.split(' ')[1];
+        if (!token) {
+            return res.status(401).json({ message: 'Token missing' });
+        }
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+        next();
+    } catch (error) {
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+};
+`;
+                await fs.writeFile(authFilePath, cleanAuthMiddleware.trim());
+            }
+            // If sample files exist, no overwrite, keep existing.
+        }
+
+        // ✅ Always create empty .env file by default
         await fs.writeFile(path.join(destination, '.env'), '');
 
         console.log(success('\n✔ Project setup completed!'));

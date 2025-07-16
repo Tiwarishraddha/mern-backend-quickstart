@@ -1,6 +1,6 @@
 {
   "name": "mern-backend-quickstart",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "CLI tool to quickly generate a MERN backend boilerplate with optional auth middleware.",
   "main": "cli/index.js",
   "bin": {
