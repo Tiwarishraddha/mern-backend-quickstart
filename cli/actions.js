@@ -9,15 +9,7 @@ const __dirname = path.dirname(__filename);
 
 export const createProject = async (answers) => {
     const destination = process.cwd();
-    let source = '';
-
-    if (answers.structure === 'Yes') {
-        source = answers.sampleFiles === 'Yes'
-            ? path.resolve(__dirname, '..', 'templates', 'full-with-sample')
-            : path.resolve(__dirname, '..', 'templates', 'full-empty');
-    } else {
-        source = path.resolve(__dirname, '..', 'templates');
-    }
+    const source = path.resolve(__dirname, '..', 'templates');
 
     const spinner = createSpinner('Copying project files...').start();
 
@@ -44,14 +36,32 @@ export const createProject = async (answers) => {
             await fs.remove(path.join(destination, 'models', 'sampleModel.js'));
             await fs.remove(path.join(destination, 'controllers', 'sampleController.js'));
             await fs.remove(path.join(destination, 'routes', 'sampleRoute.js'));
+
+            // Also update server.js to remove sample imports
+            const serverFilePath = path.join(destination, 'server.js');
+            const simpleServerContent = `
+import express from 'express';
+import dotenv from 'dotenv';
+import connectDB from './config/database.js';
+
+dotenv.config();
+connectDB();
+
+const app = express();
+app.use(express.json());
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(\`Server running on port \${PORT}\`));
+            `.trim();
+
+            await fs.writeFile(serverFilePath, simpleServerContent);
+        
         }
 
-        // Handle authMiddleware.js content based on answers
+        // If auth is selected, but sample is not selected, write clean middleware
         if (answers.auth) {
             const authFilePath = path.join(destination, 'middleware', 'authMiddleware.js');
-
             if (!answers.sampleFiles) {
-                // If no sample files, overwrite authMiddleware.js with simple one
                 const cleanAuthMiddleware = `
 import jwt from 'jsonwebtoken';
 
@@ -71,11 +81,13 @@ export const protect = async (req, res, next) => {
 `;
                 await fs.writeFile(authFilePath, cleanAuthMiddleware.trim());
             }
-            // If sample files exist, no overwrite, keep existing.
         }
 
-        // ✅ Always create empty .env file by default
-        await fs.writeFile(path.join(destination, '.env'), '');
+        // Always create .env with placeholders
+        await fs.writeFile(
+            path.join(destination, '.env'),
+            'MONGODB_URL = <Enter your URL here>\nPORT = <Enter PORT here>\n'
+        );
 
         console.log(success('\n✔ Project setup completed!'));
         console.log(info('\nNext steps:\n'));
