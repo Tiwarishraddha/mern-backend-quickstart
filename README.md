@@ -14,6 +14,7 @@ Run the following command:
      
 You will be asked:
     ? Do you want authentication middleware? (Y/n)
+    ? Do you want sample files? (Y/n)
 
 👉 Based on your answers, a ready-to-use backend project will be created.
 
